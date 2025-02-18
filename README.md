@@ -9,6 +9,10 @@ Full set of RPG dice are now added and working, with uniform icons. There is now
 
 Added the dX roller to allow dice of custom sizes. Also tidied up some filenames.
 
+## v0.3 Release
+
+Added dice modifiers, i.e. 2d6 +3. Button use may change in future, but it works for now. 
+
 ## To-do:
 
  - ~~Add a dX roller, where the user can specify the size of the die to roll (i.e. some games use a d30).~~ Added in v0.2.
