@@ -12,7 +12,7 @@ Added the dX roller to allow dice of custom sizes. Also tidied up some filenames
 ## To-do:
 
  - ~~Add a dX roller, where the user can specify the size of the die to roll (i.e. some games use a d30).~~ Added in v0.2.
- - Add a field for modifiers, so you can roll "XdY +Z" and have the "+Z" shown in the output.
+ - ~~Add a field for modifiers, so you can roll "XdY +Z" and have the "+Z" shown in the output.~~ Added in v0.3
  - Provide a way for the user to "name" their rolls, i.e. a field where you can enter "attack" or "damage", and then have that show in the output when you roll.
  - Allow user-created combinations of dice to be pre-saved. So you can combine a d20 and 2d6 +4, and roll for attack and damage on a single click. These should also be nameable, as above.
  - Allow saving of rolls into a log, and create a clean way for the user to view that log.
