@@ -25,14 +25,7 @@ def zeroDice():
 	for die in 4, 6, 8, 10, 12, 20, 100, 1:
 		d[die].delete(0, END)
 		d[die].insert(0, "0")
-		try:
-			if d[die + 1]:
-				d[die + 1].delete(0, END)
-				d[die + 1].insert(0, "0")
-			#endif
-		except KeyError:
-			break
-		#endtry
+		m[die].config(text="+0")
 	#endfor
 	output.delete("1.0", END)
 	totText.delete("1.0", END)
@@ -83,12 +76,14 @@ def roll():
 					#else:
 					output.insert(END, f'Rolled total: {sub + modi}\n')
 					#endif
-					if d[die + 1].get() != "0": #die+1 holds the modifier entry widget for a given die size, i.e. index 4 holds the num4 reference, index 5 (4+1) holds the modifier reference
-						modi = int(d[die + 1].get())
+					if m[die].cget("text") != "+0":
+						modi = int(m[die].cget("text"))
 						if modi > 99:
-							d[die + 1].delete(0, END)
-							d[die + 1].insert(0, "99")
+							m[die].config(text="99")
 							modi = 99
+						elif modi < -99:
+							m[die].config(text="-99")
+							modi = -99
 						#endif
 						#mods = m[die].cget("text") #modifier sign
 						if modi < 0:
@@ -97,8 +92,9 @@ def roll():
 							output.insert(END, f'With +{modi} modifier: {sub + modi}\n\n')
 						#endif
 						rollTotal += modi
+					else:
+						output.insert(END, f'\n') #insert a blank line if there's no modifier output
 					#endif
-					
 					rollTotal += sub
 				else:
 					output.insert(END, f', ')
@@ -112,24 +108,30 @@ def roll():
 	#endfor
 #enddef
 
-def swapSign(event, num):
-	curSign = m[num].cget("text")
-	if curSign == "+":
-		m[num].config(text = "-")
-	else:
-		m[num].config(text = "+")
-	#endif
+#def swapSign(event, num):
+#	curSign = m[num].cget("text")
+#	if curSign == "+":
+#		m[num].config(text = "-")
+#	else:
+#		m[num].config(text = "+")
+#	#endif
 #enddef
 
 def incMod(event, num):
-	curSign = m[num].cget("text")
-	curVal = int(d[num + 1].get())
-	if curSign == "+":
-		d[num + 1].delete(0, END)
-		d[num + 1].insert(END, str(curVal + 1))
+	curVal = int(m[num].cget("text"))
+	#curVal = int(d[num + 1].get())
+	if event.num == 1 or event.delta > 0:
+		if curVal + 1 >= 0:
+			m[num].config(text="+" + str(curVal + 1))
+		else:
+			m[num].config(text=str(curVal + 1))
+		#endif
 	else:
-		d[num + 1].delete(0, END)
-		d[num + 1].insert(END, str(curVal - 1))
+		if curVal - 1 >= 0:
+			m[num].config(text="+" + str(curVal - 1))
+		else:
+			m[num].config(text=str(curVal - 1))
+		#endif
 	#endif
 #enddef
 
@@ -145,21 +147,22 @@ can4.create_image(0, 0, image=img4, anchor=NW)
 can4.bind("<Button-1>", lambda event, mode="plus": mod(mode, 4))
 can4.bind("<Button-2>", lambda event, mode="minus": mod(mode, 4))
 can4.bind("<Button-3>", lambda event, mode="minus": mod(mode, 4))
-can4.bind("<MouseWheel>", lambda event: mouse_wheel(event, 4))
+can4.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 4))
 can4.grid(row=0, column=0, columnspan=2, sticky=EW, padx=0)
 
 num4 = ttk.Entry(dFrame, width = 8, justify=CENTER)
 num4.insert(0,"0")
 num4.grid(row=1, column=0, columnspan=2, pady=8)
 
-modLbl4 = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLbl4 = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLbl4.bind("<Button-1>", lambda event: incMod(event, 4))
-modLbl4.bind("<Button-2>", lambda event: swapSign(event, 4))
-modLbl4.bind("<Button-3>", lambda event: swapSign(event, 4))
-modLbl4.grid(row=2, column=0)
-mod4 = Entry(dFrame, width=3, justify=CENTER)
-mod4.insert(0,"0")
-mod4.grid(row=2, column=1)
+modLbl4.bind("<Button-2>", lambda event: incMod(event, 4))
+modLbl4.bind("<Button-3>", lambda event: incMod(event, 4))
+modLbl4.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 4))
+modLbl4.grid(row=2, column=0, columnspan=2)
+#mod4 = Entry(dFrame, width=3, justify=CENTER)
+#mod4.insert(0,"0")
+#mod4.grid(row=2, column=1)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=2, rowspan=20, sticky="ns", padx=10)
 
@@ -171,21 +174,22 @@ can6.create_image(0, 0, image=img6, anchor=NW)
 can6.bind("<Button-1>", lambda event, mode="plus": mod(mode, 6))
 can6.bind("<Button-2>", lambda event, mode="minus": mod(mode, 6))
 can6.bind("<Button-3>", lambda event, mode="minus": mod(mode, 6))
-can6.bind("<MouseWheel>", lambda event: mouse_wheel(event, 6))
+can6.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 6))
 can6.grid(row=0, column=3, columnspan=2, sticky=EW)
 
 num6 = ttk.Entry(dFrame, width = 8, justify=CENTER)
 num6.insert(0,"0")
 num6.grid(row = 1, column=3, columnspan=2, pady=8)
 
-modLbl6 = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLbl6 = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLbl6.bind("<Button-1>", lambda event: incMod(event, 6))
-modLbl6.bind("<Button-2>", lambda event: swapSign(event, 6))
-modLbl6.bind("<Button-3>", lambda event: swapSign(event, 6))
-modLbl6.grid(row=2, column=3)
-mod6 = Entry(dFrame, width=3, justify=CENTER)
-mod6.insert(0,"0")
-mod6.grid(row=2, column=4)
+modLbl6.bind("<Button-2>", lambda event: incMod(event, 6))
+modLbl6.bind("<Button-3>", lambda event: incMod(event, 6))
+modLbl6.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 6))
+modLbl6.grid(row=2, column=3, columnspan=2)
+#mod6 = Entry(dFrame, width=3, justify=CENTER)
+#mod6.insert(0,"0")
+#mod6.grid(row=2, column=4)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=5, rowspan=20, sticky="ns", padx=10)
 
@@ -197,21 +201,22 @@ can8.create_image(0, 0, image=img8, anchor=NW)
 can8.bind("<Button-1>", lambda event, mode="plus": mod(mode, 8))
 can8.bind("<Button-2>", lambda event, mode="minus": mod(mode, 8))
 can8.bind("<Button-3>", lambda event, mode="minus": mod(mode, 8))
-can8.bind("<MouseWheel>", lambda event: mouse_wheel(event, 8))
+can8.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 8))
 can8.grid(row=0, column=6, columnspan=2, sticky=EW)
 
 num8 = ttk.Entry(dFrame, width = 8, justify=CENTER)
 num8.insert(0,"0")
 num8.grid(row = 1, column=6, columnspan=2, pady=8)
 
-modLbl8 = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLbl8 = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLbl8.bind("<Button-1>", lambda event: incMod(event, 8))
-modLbl8.bind("<Button-2>", lambda event: swapSign(event, 8))
-modLbl8.bind("<Button-3>", lambda event: swapSign(event, 8))
-modLbl8.grid(row=2, column=6)
-mod8 = Entry(dFrame, width=3, justify=CENTER)
-mod8.insert(0,"0")
-mod8.grid(row=2, column=7)
+modLbl8.bind("<Button-2>", lambda event: incMod(event, 8))
+modLbl8.bind("<Button-3>", lambda event: incMod(event, 8))
+modLbl8.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 8))
+modLbl8.grid(row=2, column=6, columnspan=2)
+#mod8 = Entry(dFrame, width=3, justify=CENTER)
+#mod8.insert(0,"0")
+#mod8.grid(row=2, column=7)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=8, rowspan=20, sticky="ns", padx=10)
 
@@ -223,21 +228,22 @@ can10.create_image(0, 0, image=img10, anchor=NW)
 can10.bind("<Button-1>", lambda event, mode="plus": mod(mode, 10))
 can10.bind("<Button-2>", lambda event, mode="minus": mod(mode, 10))
 can10.bind("<Button-3>", lambda event, mode="minus": mod(mode, 10))
-can10.bind("<MouseWheel>", lambda event: mouse_wheel(event, 10))
+can10.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 10))
 can10.grid(row=0, column=9, columnspan=2, sticky=EW)
 
 num10 = ttk.Entry(dFrame, width = 8, justify=CENTER)
 num10.insert(0,"0")
 num10.grid(row = 1, column=9, columnspan=2, pady=8)
 
-modLbl10 = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLbl10 = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLbl10.bind("<Button-1>", lambda event: incMod(event, 10))
-modLbl10.bind("<Button-2>", lambda event: swapSign(event, 10))
-modLbl10.bind("<Button-3>", lambda event: swapSign(event, 10))
-modLbl10.grid(row=2, column=9)
-mod10 = Entry(dFrame, width=3, justify=CENTER)
-mod10.insert(0,"0")
-mod10.grid(row=2, column=10)
+modLbl10.bind("<Button-2>", lambda event: incMod(event, 10))
+modLbl10.bind("<Button-3>", lambda event: incMod(event, 10))
+modLbl10.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 10))
+modLbl10.grid(row=2, column=9, columnspan=2)
+#mod10 = Entry(dFrame, width=3, justify=CENTER)
+#mod10.insert(0,"0")
+#mod10.grid(row=2, column=10)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=11, rowspan=20, sticky="ns", padx=10)
 
@@ -249,21 +255,22 @@ can12.create_image(0, 0, image=img12, anchor=NW)
 can12.bind("<Button-1>", lambda event, mode="plus": mod(mode, 12))
 can12.bind("<Button-2>", lambda event, mode="minus": mod(mode, 12))
 can12.bind("<Button-3>", lambda event, mode="minus": mod(mode, 12))
-can12.bind("<MouseWheel>", lambda event: mouse_wheel(event, 12))
+can12.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 12))
 can12.grid(row=0, column=12, columnspan=2, sticky=EW)
 
 num12 = ttk.Entry(dFrame, width = 8, justify=CENTER)
 num12.insert(0,"0")
 num12.grid(row = 1, column=12, columnspan=2, pady=8)
 
-modLbl12 = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLbl12 = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLbl12.bind("<Button-1>", lambda event: incMod(event, 12))
-modLbl12.bind("<Button-2>", lambda event: swapSign(event, 12))
-modLbl12.bind("<Button-3>", lambda event: swapSign(event, 12))
-modLbl12.grid(row=2, column=12)
-mod12 = Entry(dFrame, width=3, justify=CENTER)
-mod12.insert(0,"0")
-mod12.grid(row=2, column=13)
+modLbl12.bind("<Button-2>", lambda event: incMod(event, 12))
+modLbl12.bind("<Button-3>", lambda event: incMod(event, 12))
+modLbl12.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 12))
+modLbl12.grid(row=2, column=12, columnspan=2)
+#mod12 = Entry(dFrame, width=3, justify=CENTER)
+#mod12.insert(0,"0")
+#mod12.grid(row=2, column=13)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=14, rowspan=20, sticky="ns", padx=10)
 
@@ -275,21 +282,22 @@ can20.create_image(0, 0, image=img20, anchor=NW)
 can20.bind("<Button-1>", lambda event, mode="plus": mod(mode, 20))
 can20.bind("<Button-2>", lambda event, mode="minus": mod(mode, 20))
 can20.bind("<Button-3>", lambda event, mode="minus": mod(mode, 20))
-can20.bind("<MouseWheel>", lambda event: mouse_wheel(event, 20))
+can20.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 20))
 can20.grid(row=0, column=15, columnspan=2, sticky=EW)
 
 num20 = ttk.Entry(dFrame, width = 8, justify=CENTER)
 num20.insert(0,"0")
 num20.grid(row = 1, column=15, columnspan=2, pady=8)
 
-modLbl20 = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLbl20 = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLbl20.bind("<Button-1>", lambda event: incMod(event, 20))
-modLbl20.bind("<Button-2>", lambda event: swapSign(event, 20))
-modLbl20.bind("<Button-3>", lambda event: swapSign(event, 20))
-modLbl20.grid(row=2, column=15)
-mod20 = Entry(dFrame, width=3, justify=CENTER)
-mod20.insert(0,"0")
-mod20.grid(row=2, column=16)
+modLbl20.bind("<Button-2>", lambda event: incMod(event, 20))
+modLbl20.bind("<Button-3>", lambda event: incMod(event, 20))
+modLbl20.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 20))
+modLbl20.grid(row=2, column=15, columnspan=2)
+#mod20 = Entry(dFrame, width=3, justify=CENTER)
+#mod20.insert(0,"0")
+#mod20.grid(row=2, column=16)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=17, rowspan=20, sticky="ns", padx=10)
 
@@ -301,21 +309,22 @@ can100.create_image(0, 0, image=img100, anchor=NW)
 can100.bind("<Button-1>", lambda event, mode="plus": mod(mode, 100))
 can100.bind("<Button-2>", lambda event, mode="minus": mod(mode, 100))
 can100.bind("<Button-3>", lambda event, mode="minus": mod(mode, 100))
-can100.bind("<MouseWheel>", lambda event: mouse_wheel(event, 100))
+can100.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 100))
 can100.grid(row=0, column=18, columnspan=2, sticky=EW)
 
 num100 = ttk.Entry(dFrame, width = 8, justify=CENTER)
 num100.insert(0,"0")
 num100.grid(row = 1, column=18, columnspan=2, pady=8)
 
-modLbl100 = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLbl100 = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLbl100.bind("<Button-1>", lambda event: incMod(event, 100))
-modLbl100.bind("<Button-2>", lambda event: swapSign(event, 100))
-modLbl100.bind("<Button-3>", lambda event: swapSign(event, 100))
-modLbl100.grid(row=2, column=18)
-mod100 = Entry(dFrame, width=3, justify=CENTER)
-mod100.insert(0,"0")
-mod100.grid(row=2, column=19)
+modLbl100.bind("<Button-2>", lambda event: incMod(event, 100))
+modLbl100.bind("<Button-3>", lambda event: incMod(event, 100))
+modLbl100.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 100))
+modLbl100.grid(row=2, column=18, columnspan=2)
+#mod100 = Entry(dFrame, width=3, justify=CENTER)
+#mod100.insert(0,"0")
+#mod100.grid(row=2, column=19)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=20, rowspan=20, sticky="ns", padx=10)
 
@@ -327,7 +336,7 @@ canX.create_image(0, 0, image=imgX, anchor=NW)
 canX.bind("<Button-1>", lambda event, mode="plus": mod(mode, 1))
 canX.bind("<Button-2>", lambda event, mode="minus": mod(mode, 1))
 canX.bind("<Button-3>", lambda event, mode="minus": mod(mode, 1))
-canX.bind("<MouseWheel>", lambda event: mouse_wheel(event, 1))
+canX.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "num", 1))
 canX.grid(row=0, column=21, columnspan=3, sticky=EW)
 
 numX = ttk.Entry(dFrame, width = 2, justify=CENTER)
@@ -341,14 +350,15 @@ sizeX = ttk.Entry(dFrame, width = 2, justify=CENTER)
 sizeX.insert(0,"0")
 sizeX.grid(row = 1, column=23, pady=3)
 
-modLblX = Label(dFrame, width=2, text="+", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
+modLblX = Label(dFrame, width=3, text="+0", justify=CENTER, background="#1b1f1a", foreground="white", borderwidth=2, relief="ridge", font=(12))
 modLblX.bind("<Button-1>", lambda event: incMod(event, 1))
-modLblX.bind("<Button-2>", lambda event: swapSign(event, 1))
-modLblX.bind("<Button-3>", lambda event: swapSign(event, 1))
-modLblX.grid(row=2, column=21)
-modX = Entry(dFrame, width=3, justify=CENTER)
-modX.insert(0,"0")
-modX.grid(row=2, column=23)
+modLblX.bind("<Button-2>", lambda event: incMod(event, 1))
+modLblX.bind("<Button-3>", lambda event: incMod(event, 1))
+modLblX.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 1))
+modLblX.grid(row=2, column=21, columnspan=3)
+#modX = Entry(dFrame, width=3, justify=CENTER)
+#modX.insert(0,"0")
+#modX.grid(row=2, column=23)
 
 ### End of dice
 line = ttk.Separator(root, orient='horizontal').place(y=155, relwidth=1.0)
@@ -376,7 +386,7 @@ totText = Text(totFrame, height=1, width=1)
 totText.place(relwidth=1.0, relheight=1.0)
 
 #define dictionary of Entry objects
-d = {4: num4, 5:mod4, 6: num6, 7:mod6, 8:num8, 9: mod8, 10:num10, 11:mod10, 12:num12, 13:mod12, 20:num20, 21:mod20, 100:num100, 101: mod100, 1:numX, 2:modX}
+d = {4: num4, 6: num6, 8:num8, 10:num10, 12:num12, 20:num20, 100:num100, 1:numX}
 
 m = {4:modLbl4, 6:modLbl6, 8:modLbl8, 10:modLbl10, 12:modLbl12, 20:modLbl20, 100:modLbl100, 1:modLblX}
 
@@ -401,82 +411,16 @@ def mod(op, num):
 	#endif
 #enddef
 
-def mouse_wheel(event, num):
-	if event.delta >= 0:
-		mod("plus", num)
-	else:
-		mod("minus", num)
-	#endif
-#enddef
-
-'''
-### Old layout
-mFrame = Frame(root)
-mFrame.grid(row=1, column=1)
-
-lMode = Label(mFrame, text="Mode Selector:").grid(row=0, column=0)
-
-curMode = ""
-modeNormal = Radiobutton(mFrame, text="New Rolls", variable=curMode, value="new")
-modeNormal.grid(row=1, column=0)
-modeNormal.select()
-
-modeAdd = Radiobutton(mFrame, text="Additive", variable=curMode, value="add")
-modeAdd.grid(row=1, column=1)
-modeAdd.deselect()
-
-modeLog = Radiobutton(mFrame, text="Log", variable=curMode, value="log")
-modeLog.grid(row=1, column=2)
-modeLog.deselect()
-
-###End mode/options frame
-
-line = ttk.Separator(root, orient='horizontal').grid(row = 2, columnspan = 15, sticky="ew")
-
-#d4
-label4 = Label(text = "[d4]").grid(row=3, column=0, padx=20, sticky="W")
-
-total4 = Text(width = 50, height = 4)
-total4.grid(row = 4, column = 1, sticky="S")
-
-options4 = Frame(root, bg="lightblue")
-options4.grid(row=3,column=1)
-lNum4 = Label(options4,text="Number of dice: ").grid(row=1,column=1)
-
-num4 = Entry(options4, width = 3)
-num4.insert(0,"1")
-num4.grid(row = 1, column = 2)
-
-def d4():
-	total4.delete("1.0", END)
-	i = 0
-	rand = 0
-	if num4.get() != "":
-		if int(num4.get()) <= 50:
-			while i < int(num4.get()):
-				i += 1
-				newRoll = random.randint(1,4)
-				total4.insert(END, f'Roll {i}: {newRoll}\n')
-				rand += newRoll
-			#endwhile
+def mouse_wheel_handler(event, target, num):
+	if target == "num":
+		if event.delta >= 0:
+			mod("plus", num)
 		else:
-			rand = "My hands aren't big enough for that many dice."
+			mod("minus", num)
 		#endif
-	else:
-		num4.insert(0,"1") #it looks cleaner than rolling 1 die with this field empty
-		rand = random.randint(1,4)
+	elif target == "mod":
+		incMod(event, num)
 	#endif
-	
-	total4.insert(1.0, f'Total: {rand}\n\n')
 #enddef
-
-btn4 = Button(root, text="Roll!", command=d4, width = 4, height = 2).grid(row = 4, column = 0)
-
-blank = Label(text = "").grid(row=7, column=0)
-
-line = ttk.Separator(root, orient='horizontal').grid(row = 9, columnspan = 15, sticky="ew")
-
-label6 = Label(text="[d6]").grid(row = 12, column = 0)
-'''
 
 root.mainloop()

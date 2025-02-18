@@ -1,17 +1,18 @@
 # diceroller
 A simple Python dice rolling GUI for RPG/tabletop dice.
 
-## v0.1 Release
-
+## Changelog
+### v0.1
 Full set of RPG dice are now added and working, with uniform icons. There is now also a separate frame for the total, the dice output is cleaner and simpler, and there's a reset button to set all dice back to zero.
 
-## v0.2 Release
-
+### v0.2
 Added the dX roller to allow dice of custom sizes. Also tidied up some filenames.
 
-## v0.3 Release
+### v0.3
+Added dice modifiers, i.e. 2d6 +3. Button UI may change in future, but it works for now.
 
-Added dice modifiers, i.e. 2d6 +3. Button use may change in future, but it works for now. 
+### v0.3.1
+Changed the modifier UI to be more useful. Got rid of the Entry fields and just used Labels.
 
 ## To-do:
 
