@@ -117,18 +117,8 @@ def roll():
 	#endfor
 #enddef
 
-#def swapSign(event, num):
-#	curSign = m[num].cget("text")
-#	if curSign == "+":
-#		m[num].config(text = "-")
-#	else:
-#		m[num].config(text = "+")
-#	#endif
-#enddef
-
-def incMod(event, num):
+'''def incMod(event, num):
 	curVal = int(m[num].cget("text"))
-	#curVal = int(d[num + 1].get())
 	if event.num == 1 or event.delta > 0:
 		if curVal + 1 >= 0:
 			m[num].config(text="+" + str(curVal + 1))
@@ -142,8 +132,16 @@ def incMod(event, num):
 			m[num].config(text=str(curVal - 1))
 		#endif
 	#endif
+#enddef'''
+
+def incMod(event, num):
+    curVal = int(m[num].cget("text")) #get current modifier value
+    newVal = curVal + 1 if event.num == 1 or event.delta > 0 else curVal - 1 #increment if left-clicked or scrolled up, otherwise decrement
+    m[num].config(text=(f"+" if newVal >= 0 else "") + str(newVal)) #prepend a "+" for a positive number, then cast it to a string and put it in the box
+    #endif
 #enddef
 
+#frame to hold the die rollers
 dFrame = Frame(root, bg="#1b1f1a")
 dFrame.place(anchor=W, x=10, rely=0.15)
 
@@ -169,9 +167,6 @@ modLbl4.bind("<Button-2>", lambda event: incMod(event, 4))
 modLbl4.bind("<Button-3>", lambda event: incMod(event, 4))
 modLbl4.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 4))
 modLbl4.grid(row=2, column=0, columnspan=2)
-#mod4 = Entry(dFrame, width=3, justify=CENTER)
-#mod4.insert(0,"0")
-#mod4.grid(row=2, column=1)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=2, rowspan=20, sticky="ns", padx=10)
 
@@ -196,9 +191,6 @@ modLbl6.bind("<Button-2>", lambda event: incMod(event, 6))
 modLbl6.bind("<Button-3>", lambda event: incMod(event, 6))
 modLbl6.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 6))
 modLbl6.grid(row=2, column=3, columnspan=2)
-#mod6 = Entry(dFrame, width=3, justify=CENTER)
-#mod6.insert(0,"0")
-#mod6.grid(row=2, column=4)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=5, rowspan=20, sticky="ns", padx=10)
 
@@ -223,9 +215,6 @@ modLbl8.bind("<Button-2>", lambda event: incMod(event, 8))
 modLbl8.bind("<Button-3>", lambda event: incMod(event, 8))
 modLbl8.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 8))
 modLbl8.grid(row=2, column=6, columnspan=2)
-#mod8 = Entry(dFrame, width=3, justify=CENTER)
-#mod8.insert(0,"0")
-#mod8.grid(row=2, column=7)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=8, rowspan=20, sticky="ns", padx=10)
 
@@ -250,9 +239,6 @@ modLbl10.bind("<Button-2>", lambda event: incMod(event, 10))
 modLbl10.bind("<Button-3>", lambda event: incMod(event, 10))
 modLbl10.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 10))
 modLbl10.grid(row=2, column=9, columnspan=2)
-#mod10 = Entry(dFrame, width=3, justify=CENTER)
-#mod10.insert(0,"0")
-#mod10.grid(row=2, column=10)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=11, rowspan=20, sticky="ns", padx=10)
 
@@ -277,9 +263,6 @@ modLbl12.bind("<Button-2>", lambda event: incMod(event, 12))
 modLbl12.bind("<Button-3>", lambda event: incMod(event, 12))
 modLbl12.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 12))
 modLbl12.grid(row=2, column=12, columnspan=2)
-#mod12 = Entry(dFrame, width=3, justify=CENTER)
-#mod12.insert(0,"0")
-#mod12.grid(row=2, column=13)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=14, rowspan=20, sticky="ns", padx=10)
 
@@ -304,9 +287,6 @@ modLbl20.bind("<Button-2>", lambda event: incMod(event, 20))
 modLbl20.bind("<Button-3>", lambda event: incMod(event, 20))
 modLbl20.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 20))
 modLbl20.grid(row=2, column=15, columnspan=2)
-#mod20 = Entry(dFrame, width=3, justify=CENTER)
-#mod20.insert(0,"0")
-#mod20.grid(row=2, column=16)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=17, rowspan=20, sticky="ns", padx=10)
 
@@ -331,9 +311,6 @@ modLbl100.bind("<Button-2>", lambda event: incMod(event, 100))
 modLbl100.bind("<Button-3>", lambda event: incMod(event, 100))
 modLbl100.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 100))
 modLbl100.grid(row=2, column=18, columnspan=2)
-#mod100 = Entry(dFrame, width=3, justify=CENTER)
-#mod100.insert(0,"0")
-#mod100.grid(row=2, column=19)
 
 line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=20, rowspan=20, sticky="ns", padx=10)
 
@@ -365,13 +342,9 @@ modLblX.bind("<Button-2>", lambda event: incMod(event, 1))
 modLblX.bind("<Button-3>", lambda event: incMod(event, 1))
 modLblX.bind("<MouseWheel>", lambda event: mouse_wheel_handler(event, "mod", 1))
 modLblX.grid(row=2, column=21, columnspan=3)
-#modX = Entry(dFrame, width=3, justify=CENTER)
-#modX.insert(0,"0")
-#modX.grid(row=2, column=23)
-
 ### End of dice
-line = ttk.Separator(root, orient='horizontal').place(y=155, relwidth=1.0)
 
+line = ttk.Separator(root, orient='horizontal').place(y=155, relwidth=1.0)
 
 rollBtn = Button(root, text="Roll!", command=roll)
 rollBtn.place(x=10, y=170)
@@ -379,12 +352,40 @@ rollBtn.place(x=10, y=170)
 zeroBtn = Button(root, text="Reset", command=zeroDice, width=10)
 zeroBtn.place(x=765, y=170, anchor=NE)
 
+def saveMacro():
+	macString=""
+	name=nameEntry.get()
+	if name == "":
+		output.delete("1.0", END)
+		output.insert(END, "You must enter a name to save a macro.")
+		return
+	#endif
+	for die in 4, 6, 8, 10, 12, 20, 100, 1:
+		num=d[die].get()
+		mod=m[die].cget("text")
+		
+		if num == "0":
+			continue
+		else:
+			if macString == "":
+				macString=f'{name},'
+			#endif
+			macString+=f'{str(num)},{str(die)},{str(mod)},'
+		#emdif
+	#endFor
+	macString = macString[:-1]
+	macFile = open("macros.ini","r+")
+	macFile.write(macString)
+#enddef
+
 nameFrame = Frame(root, width=700, height=20, bg="#1b1f1a")
 nameFrame.place(x=0, y=210)
 nameLbl = Label(nameFrame, text="Name this roll?", bg="#3b3f3a", fg="white", borderwidth=2, relief=SUNKEN)
 nameLbl.grid(row=0, column=0, padx=10)
 nameEntry = Entry(nameFrame)
 nameEntry.grid(row=0, column=1)
+saveMac = Button(nameFrame, text="Save as macro", command=saveMacro)
+saveMac.grid(row=0, column=2, padx=20)
 
 outFrame = Frame(root, width=755, height=200)
 outFrame.place(x=10, y=245)
@@ -403,16 +404,14 @@ def showHelp():
 		if helpWdw.winfo_exists():
 			pass
 		else:
-			pass
+			helpWdw = Toplevel(root)
 	except NameError:
-		#print("Except")
-		helpWdw = Tk()
-		helpWdw.title("Dice Roller Usage Instructions")
-		helpWdw.geometry('800x400')
-		helpWdw.configure(bg="#1b1f1a")
-		helpWdw.resizable("false","false")
+		helpWdw = Toplevel(root)
 	#endtry
-
+	helpWdw.title("Dice Roller Usage Instructions")
+	helpWdw.geometry("800x400")
+	helpWdw.configure(bg="#1b1f1a")
+	helpWdw.resizable("false","false")
 	
 	helpTxt = Text(helpWdw, bg="#1b1f1a", borderwidth=0, fg="white")
 	helpTxt.insert(END, "Welcome to Dice Roller!\n\n\
@@ -432,14 +431,112 @@ Click \"Roll!\" to roll the dice as you've defined them.\nClick \"Reset\" to set
 helpBtn = Button(root, text="Usage Help", command=showHelp)
 helpBtn.place(x=765, y=540, anchor=SE)
 
+def showMacWdw():
+	try:
+		global macWdw
+		if macWdw.winfo_exists():
+			pass
+		else:
+			macWdw = Toplevel(root)
+	except NameError:
+		macWdw = Toplevel(root)
+	#endtry
+	macWdw.title("Dice Roller Macro Editor")
+	macWdw.geometry("1000x600")
+	macWdw.configure(bg="#1b1f1a")
+	macWdw.resizable("false","false")
+
+	macFile = open("macros.ini","r")
+	i=0
+	macFrame = Frame(macWdw, width=400, borderwidth=1, relief=RAISED, bg="#505050")
+	macFrame.grid(row=0, column=0)
+	for curMacString in macFile:
+		curMacList = curMacString.split(',')
+		showMac(curMacList, i, macFrame)
+		print(i)
+		i+=1
+	#endfor
+
+macroBtn = Button(root, text="Macros", command=showMacWdw)
+macroBtn.place(x=10, y=540, anchor=SW)
+
 #define dictionary of Entry objects
-d = {4: num4, 6: num6, 8:num8, 10:num10, 12:num12, 20:num20, 100:num100, 1:numX}
+d = {4: num4, 6: num6, 8:num8, 10:num10, 12:num12, 20:num20, 100:num100, 1:numX, 2:sizeX}
 
 m = {4:modLbl4, 6:modLbl6, 8:modLbl8, 10:modLbl10, 12:modLbl12, 20:modLbl20, 100:modLbl100, 1:modLblX}
 
+def loadMac(macro):
+	zeroDice()
+	macName = macro[0]
+	output.delete("1.0", END)
+	output.insert(END, f'Macro "{macName}" loaded.')
+	i=0
+	nameEntry.delete(0, END)
+	nameEntry.insert(END, macName)
+	while i < (len(macro) - 1):
+		realSize=0
+		num=i+1
+		macNum = macro[num]
+		num=i+2
+		macSize = int(macro[num])
+		if macSize == 1:
+			num=i+3
+			realSize = macro[num]
+			num=i+4
+			macMod = macro[num]
+			i+=4
+		else:
+			num=i+3
+			macMod = macro[num]
+			i+=3
+		#endif
+		d[macSize].delete(0, END)
+		d[macSize].insert(0, macNum)
+		if realSize != 0: #realSize is only set if "size" is 1, indicating an XdY roll.
+			d[2].delete(0, END)
+			d[2].insert(0, realSize)
+		m[macSize].config(text=f'{macMod}')
+	#endWhile
+#endDef
+
+def showMac(macro, row, frame):
+	macName = Label(frame, text=[macro[0]])
+	macName.grid(row=row, column=0, sticky=W)
+	macDice = Entry(frame, width=0)
+	i = 0
+	realSize = 0
+	while i < (len(macro) - 1):
+		num=i+1
+		size=i+2
+		if macro[size] == "1": #to handle saved XdY rolls
+			realSizeIndex=i+3
+			realSize=macro[realSizeIndex]
+			mod=i+4
+			macDice.insert(END, f'{macro[num]}d{realSize} {macro[mod]}')
+			i+=4
+		else:
+			mod=i+3
+			macDice.insert(END, f'{macro[num]}d{macro[size]} {macro[mod]}')
+			i+=3
+		#endif
+		if i < (len(macro) -1):
+			macDice.insert(END, f', ')
+		#endif
+	#endwhile
+	macDice.grid(row=row, column=1, padx=5)
+	macLoadBtn = Button(frame, text="Load", command= lambda: loadMac(macro))
+	macLoadBtn.grid(row=row, column=3)
+
+	macRollBtn = Button(frame, text="Roll", command= lambda: (loadMac(macro), roll()))
+	macRollBtn.grid(row=row, column=4)
+#endDef
+
+
+#testMac = ["Longsword", 1, 20, "+3", 1, 8, "+5"]
+#loadMac(testMac)
+
 def mod(op, num):
 	oldNum = int(d[num].get())
-	#print("oldNum: " + str(oldNum))
 	if op == "plus":
 		if oldNum >= 20:
 			newNum = 20
