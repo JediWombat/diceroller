@@ -382,7 +382,8 @@ def saveMacro():
 	#endFor
 	macString = macString[:-1]
 	macFile = open("macros.ini","a")
-	macFile.write(macString)
+	macFile.write(f'{macString}\n')
+	macFile.close()
 #enddef
 
 nameFrame = Frame(root, width=700, height=20, bg="#1b1f1a")
@@ -449,7 +450,10 @@ def showMacWdw():
 		macWdw = Toplevel(root)
 	#endtry
 	macWdw.title("Dice Roller Macro Editor")
-	macWdw.geometry("1000x600")
+	root.update()
+	rootX = root.winfo_x()
+	rootY = root.winfo_y()
+	macWdw.geometry("%dx%d+%d+%d" % (675, 400, rootX+50, rootY+250))
 	macWdw.configure(bg="#1b1f1a")
 	macWdw.resizable("false","false")
 
@@ -460,7 +464,6 @@ def showMacWdw():
 	for curMacString in macFile:
 		curMacList = curMacString.split(',')
 		showMac(curMacList, i, macFrame)
-		print(i)
 		i+=1
 	#endfor
 
@@ -506,10 +509,31 @@ def loadMac(macro):
 	#endWhile
 #endDef
 
-def showMac(macro, row, frame):
-	macName = Label(frame, text=[macro[0]])
+def delMac(macName):
+	macFile = open("macros.ini","r")
+	macContents = macFile.readlines()
+	macFile.close()
+	#print(f'Passed macName is {macName}')
+
+	macFile = open("macros.ini", "w")
+	for macro in macContents:
+		targetMacName = macro.split(',')[0]
+		#print(f'Target name is {targetMacName}')
+		if targetMacName != macName:
+			print(f'Writing macro to file: {macro}')
+			macFile.write(macro)
+		#endif
+	#endfor
+	macFile.close()
+	macWdw.destroy()
+	showMacWdw()
+
+#endDef
+
+def showMac(macro, row, frameRef):
+	macName = Label(frameRef, text=[macro[0]])
 	macName.grid(row=row, column=0, sticky=W)
-	macDice = Entry(frame, width=0)
+	macDice = Entry(frameRef, width=0)
 	i = 0
 	realSize = 0
 	while i < (len(macro) - 1):
@@ -531,11 +555,15 @@ def showMac(macro, row, frame):
 		#endif
 	#endwhile
 	macDice.grid(row=row, column=1, padx=5)
-	macLoadBtn = Button(frame, text="Load", command= lambda: loadMac(macro))
-	macLoadBtn.grid(row=row, column=3)
 
-	macRollBtn = Button(frame, text="Roll", command= lambda: (loadMac(macro), roll()))
-	macRollBtn.grid(row=row, column=4)
+	macLoadBtn = Button(frameRef, text="Load", command= lambda: loadMac(macro))
+	macLoadBtn.grid(row=row, column=2)
+
+	macRollBtn = Button(frameRef, text="Roll", command= lambda: (loadMac(macro), roll()))
+	macRollBtn.grid(row=row, column=3)
+
+	macDelBtn = Button(frameRef, text="Delete", command= lambda: delMac(macName.cget("text")))
+	macDelBtn.grid(row=row, column=4)
 #endDef
 
 
