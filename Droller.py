@@ -361,20 +361,27 @@ def saveMacro():
 		return
 	#endif
 	for die in 4, 6, 8, 10, 12, 20, 100, 1:
+		size=0
 		num=d[die].get()
 		mod=m[die].cget("text")
-		
+		if die == 1:
+			size=d[2].get()
+		#endif
 		if num == "0":
 			continue
 		else:
 			if macString == "":
 				macString=f'{name},'
 			#endif
-			macString+=f'{str(num)},{str(die)},{str(mod)},'
-		#emdif
+			if size != 0:
+				macString+=f'{str(num)},{str(die)},{str(size)},{str(mod)},'
+			else:
+				macString+=f'{str(num)},{str(die)},{str(mod)},'
+			#endif
+		#endif
 	#endFor
 	macString = macString[:-1]
-	macFile = open("macros.ini","r+")
+	macFile = open("macros.ini","a")
 	macFile.write(macString)
 #enddef
 
