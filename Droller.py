@@ -1,9 +1,11 @@
 from tkinter import *
 from tkinter import ttk
 import random
+import gc as gc
 import os
 import sys
 from PIL import ImageTk, Image
+from idlelib.tooltip import Hovertip
 
 def resource_path(relative_path):
 	try:
@@ -14,6 +16,7 @@ def resource_path(relative_path):
 
 	return os.path.join(base_path, relative_path)
 #enddef
+
 
 root = Tk()
 root.title("Dice Roller")
@@ -117,24 +120,7 @@ def roll():
 	#endfor
 #enddef
 
-'''def incMod(event, num):
-	curVal = int(m[num].cget("text"))
-	if event.num == 1 or event.delta > 0:
-		if curVal + 1 >= 0:
-			m[num].config(text="+" + str(curVal + 1))
-		else:
-			m[num].config(text=str(curVal + 1))
-		#endif
-	else:
-		if curVal - 1 >= 0:
-			m[num].config(text="+" + str(curVal - 1))
-		else:
-			m[num].config(text=str(curVal - 1))
-		#endif
-	#endif
-#enddef'''
-
-def incMod(event, num):
+def incMod(event, num): #increment/decrement modifier
     curVal = int(m[num].cget("text")) #get current modifier value
     newVal = curVal + 1 if event.num == 1 or event.delta > 0 else curVal - 1 #increment if left-clicked or scrolled up, otherwise decrement
     m[num].config(text=(f"+" if newVal >= 0 else "") + str(newVal)) #prepend a "+" for a positive number, then cast it to a string and put it in the box
@@ -360,6 +346,17 @@ def saveMacro():
 		output.insert(END, "You must enter a name to save a macro.")
 		return
 	#endif
+
+	macFile = open("macros.ini", "r")
+	macContents = macFile.readlines()
+	for macro in macContents:
+		macName = macro.split(',')[0]
+		if macName == name:
+			output.delete("1.0", END)
+			output.insert(END, f'There is already a macro saved named {name}.\n\nMacros must have a unique name.')
+			return
+		#endif
+	#endfor
 	for die in 4, 6, 8, 10, 12, 20, 100, 1:
 		size=0
 		num=d[die].get()
@@ -380,19 +377,22 @@ def saveMacro():
 			#endif
 		#endif
 	#endFor
+	#print(f'Saving macro: {macString}')
 	macString = macString[:-1]
 	macFile = open("macros.ini","a")
 	macFile.write(f'{macString}\n')
 	macFile.close()
+	output.delete("1.0", END)
+	output.insert(END, f'Macro \"{name}\" was saved successfully.')
 #enddef
 
 nameFrame = Frame(root, width=700, height=20, bg="#1b1f1a")
 nameFrame.place(x=0, y=210)
-nameLbl = Label(nameFrame, text="Name this roll?", bg="#3b3f3a", fg="white", borderwidth=2, relief=SUNKEN)
+nameLbl = Label(nameFrame, text="Roll Name:", bg="#3b3f3a", fg="white", borderwidth=2, relief=SUNKEN)
 nameLbl.grid(row=0, column=0, padx=10)
 nameEntry = Entry(nameFrame)
 nameEntry.grid(row=0, column=1)
-saveMac = Button(nameFrame, text="Save as macro", command=saveMacro)
+saveMac = Button(nameFrame, text="Save macro", command=saveMacro)
 saveMac.grid(row=0, column=2, padx=20)
 
 outFrame = Frame(root, width=755, height=200)
@@ -429,8 +429,9 @@ For the custom size die, set the number of rolls, and the size of the die.\n\n\
 	==Modifiers==\n\
 Modifiers are controlled by clicking on the modifier box:\nLMB to increment, RMB to decrement.\n\
 You can also scroll while hovering on the multiplier.\n\n\
-	==Naming Rolls==\n\
-You can enter anything you like in the name field, and it'll be shown as the name of the roll in the output.\nThis isn't super useful in this version, but in future\nwe'll be adding more functionality around this.\n\n\
+	==Macros==\n\
+Setup the dice however you want them, enter a name in the name field, and click \"Save\"\nto save that set of rolls.\n\
+Click the \"Macros\" button to view a list of your saved rolls.\n\n\
 	==Making it go==\n\
 Click \"Roll!\" to roll the dice as you've defined them.\nClick \"Reset\" to set all dice, modifiers, and other inputs back to zero.\nNote that the custom die size is not reset.")
 	helpTxt.place(x=0, y=0, relwidth=1.0)
@@ -458,14 +459,25 @@ def showMacWdw():
 	macWdw.resizable("false","false")
 
 	macFile = open("macros.ini","r")
+	global macLoadImg
+	macLoadImg = PhotoImage(file="up-arrow.png")
 	i=0
 	macFrame = Frame(macWdw, width=400, borderwidth=1, relief=RAISED, bg="#505050")
-	macFrame.grid(row=0, column=0)
+	macFrame.place(x=10, y=5)
 	for curMacString in macFile:
 		curMacList = curMacString.split(',')
-		showMac(curMacList, i, macFrame)
+		showMac(curMacList, i, macFrame, macLoadImg)
 		i+=1
 	#endfor
+	line = ttk.Separator(macWdw, orient='horizontal').place(y=300, relwidth=1.0)
+	macHelp = Text(macWdw, height=4, width=70, bg="#1b1f1a", borderwidth=0, fg="white", font=("Arial Narrow", "12"))
+	macHelp.place(y=310, relwidth=0.9)
+	macHelp.insert("1.0", "Saved macros are shown here. Button functions are as follows:\n\
+-   Load: Load the saved dice values and roll name into the main window.\n\
+-   Roll: As above, but immediately perform a roll of the saved dice.\n\
+-   Delete: Orders you a fresh Cosmopolitan...")
+#endDef
+
 
 macroBtn = Button(root, text="Macros", command=showMacWdw)
 macroBtn.place(x=10, y=540, anchor=SW)
@@ -505,7 +517,7 @@ def loadMac(macro):
 		if realSize != 0: #realSize is only set if "size" is 1, indicating an XdY roll.
 			d[2].delete(0, END)
 			d[2].insert(0, realSize)
-		m[macSize].config(text=f'{macMod}')
+		m[macSize].config(text=f'{macMod.strip('\n')}') #the final mod in the macro ends in a newline in macros.ini; this was putting the newline into the mod field without strip().
 	#endWhile
 #endDef
 
@@ -513,14 +525,11 @@ def delMac(macName):
 	macFile = open("macros.ini","r")
 	macContents = macFile.readlines()
 	macFile.close()
-	#print(f'Passed macName is {macName}')
 
 	macFile = open("macros.ini", "w")
 	for macro in macContents:
 		targetMacName = macro.split(',')[0]
-		#print(f'Target name is {targetMacName}')
 		if targetMacName != macName:
-			print(f'Writing macro to file: {macro}')
 			macFile.write(macro)
 		#endif
 	#endfor
@@ -530,9 +539,9 @@ def delMac(macName):
 
 #endDef
 
-def showMac(macro, row, frameRef):
-	macName = Label(frameRef, text=[macro[0]])
-	macName.grid(row=row, column=0, sticky=W)
+def showMac(macro, row, frameRef, macLoadImg):
+	macName = Label(frameRef, text=f'{macro[0]}')
+	macName.grid(row=row, column=0, sticky=EW)
 	macDice = Entry(frameRef, width=0)
 	i = 0
 	realSize = 0
@@ -554,21 +563,22 @@ def showMac(macro, row, frameRef):
 			macDice.insert(END, f', ')
 		#endif
 	#endwhile
-	macDice.grid(row=row, column=1, padx=5)
+	macDice.grid(row=row, column=1, padx=5, sticky=EW)
+		
+	macLoadLbl = Label(frameRef, image=macLoadImg, bg="white")
+	macLoadLbl.grid(row=row, column=2, padx=1)
+	macLoadTip = Hovertip(macLoadLbl, "Load this macro into the main window", hover_delay=400)
 
-	macLoadBtn = Button(frameRef, text="Load", command= lambda: loadMac(macro))
-	macLoadBtn.grid(row=row, column=2)
+	macLoadLbl.bind("<Button-1>", lambda event: loadMac(macro))
 
 	macRollBtn = Button(frameRef, text="Roll", command= lambda: (loadMac(macro), roll()))
-	macRollBtn.grid(row=row, column=3)
+	macRollBtn.grid(row=row, column=3, padx=1)
+	macRollTip = Hovertip(macRollBtn, "Load this macro into the main window, and roll it.", hover_delay=400)
 
 	macDelBtn = Button(frameRef, text="Delete", command= lambda: delMac(macName.cget("text")))
-	macDelBtn.grid(row=row, column=4)
+	macDelBtn.grid(row=row, column=4, padx=1, pady=3)
+	macDelTip = Hovertip(macDelBtn, "Nobody knows what this button does.", hover_delay=400)
 #endDef
-
-
-#testMac = ["Longsword", 1, 20, "+3", 1, 8, "+5"]
-#loadMac(testMac)
 
 def mod(op, num):
 	oldNum = int(d[num].get())
