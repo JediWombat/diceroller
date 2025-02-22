@@ -459,16 +459,29 @@ def showMacWdw():
 	macWdw.resizable("false","false")
 
 	macFile = open("macros.ini","r")
-	global macLoadImg
+	global macLoadImg, macRollImg, macDelImg #these have to be defined here or they'll be garbage collected from the showMac() function?
 	macLoadImg = PhotoImage(file="up-arrow.png")
+	macRollImg = PhotoImage(file="up-arrow.png")
+	macDelImg = PhotoImage(file="up-arrow.png")
 	i=0
-	macFrame = Frame(macWdw, width=400, borderwidth=1, relief=RAISED, bg="#505050")
-	macFrame.place(x=10, y=5)
+	scrollableFrame = Frame(macWdw, width=400, height=250, borderwidth=1, relief=RAISED, bg="#800050")
+	scrollableFrame.place(x=10, y=5)
+	scrollableCanvas = Canvas(scrollableFrame, bg="#00B000", width=500, height=350)
+	scrollableCanvas.place(x=0, y=0)
+	scrollableCanvas.create_text(10, 300, text="Dicks\n\n\nDicks\n\n\nDicks\n\n\nDicks\n\n\n")
+	'''
+	macFrame = Frame(scrollableCanvas, width=350, borderwidth=1, relief=RAISED, bg="#505050")
+	macFrame.pack(side=LEFT)
 	for curMacString in macFile:
 		curMacList = curMacString.split(',')
-		showMac(curMacList, i, macFrame, macLoadImg)
-		i+=1
+		showMac(curMacList, i, macFrame, macLoadImg, macRollImg, macDelImg)
+		i+=2
 	#endfor
+	'''
+	scrollbar=Scrollbar(scrollableFrame, orient="vertical")
+	scrollbar.place(x=380, y=0)#, relheight=1.0)
+	#scrollbar.pack(side=RIGHT, fill="y")
+
 	line = ttk.Separator(macWdw, orient='horizontal').place(y=300, relwidth=1.0)
 	macHelp = Text(macWdw, height=4, width=70, bg="#1b1f1a", borderwidth=0, fg="white", font=("Arial Narrow", "12"))
 	macHelp.place(y=310, relwidth=0.9)
@@ -476,6 +489,7 @@ def showMacWdw():
 -   Load: Load the saved dice values and roll name into the main window.\n\
 -   Roll: As above, but immediately perform a roll of the saved dice.\n\
 -   Delete: Orders you a fresh Cosmopolitan...")
+
 #endDef
 
 
@@ -539,9 +553,9 @@ def delMac(macName):
 
 #endDef
 
-def showMac(macro, row, frameRef, macLoadImg):
+def showMac(macro, row, frameRef, macLoadImg, macRollImg, macDelImg):
 	macName = Label(frameRef, text=f'{macro[0]}')
-	macName.grid(row=row, column=0, sticky=EW)
+	macName.grid(row=row, column=0, sticky=EW, padx=10, pady=3)
 	macDice = Entry(frameRef, width=0)
 	i = 0
 	realSize = 0
@@ -566,18 +580,26 @@ def showMac(macro, row, frameRef, macLoadImg):
 	macDice.grid(row=row, column=1, padx=5, sticky=EW)
 		
 	macLoadLbl = Label(frameRef, image=macLoadImg, bg="white")
-	macLoadLbl.grid(row=row, column=2, padx=1)
+	macLoadLbl.grid(row=row, column=2, padx=2)
 	macLoadTip = Hovertip(macLoadLbl, "Load this macro into the main window", hover_delay=400)
 
 	macLoadLbl.bind("<Button-1>", lambda event: loadMac(macro))
 
-	macRollBtn = Button(frameRef, text="Roll", command= lambda: (loadMac(macro), roll()))
-	macRollBtn.grid(row=row, column=3, padx=1)
-	macRollTip = Hovertip(macRollBtn, "Load this macro into the main window, and roll it.", hover_delay=400)
+	macRollLbl = Label(frameRef, image=macRollImg, bg="white")
+	macRollLbl.grid(row=row, column=3, padx=2)
+	macRollTip = Hovertip(macRollLbl, "Load this macro into the main window, and roll it.", hover_delay=400)
 
-	macDelBtn = Button(frameRef, text="Delete", command= lambda: delMac(macName.cget("text")))
-	macDelBtn.grid(row=row, column=4, padx=1, pady=3)
-	macDelTip = Hovertip(macDelBtn, "Nobody knows what this button does.", hover_delay=400)
+	macRollLbl.bind("<Button-1>", lambda event: loadMac(macro), roll())
+
+	macDelLbl = Label(frameRef, image=macDelImg, bg="white")
+	macDelLbl.grid(row=row, column=4, padx=2, pady=2)
+	macDelTip = Hovertip(macDelLbl, "Nobody knows what this button does.", hover_delay=400)
+
+	macDelLbl.bind("<Button-1>", lambda event: delMac(macName.cget("text")))
+
+	line = ttk.Separator(frameRef, orient='horizontal').grid(row=row+1, column=0, columnspan=5, sticky=EW)
+
+
 #endDef
 
 def mod(op, num):
