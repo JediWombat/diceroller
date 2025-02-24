@@ -2,8 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import random
 import gc as gc
-import os
-import sys
+import os, sys, platform
 from PIL import ImageTk, Image
 from idlelib.tooltip import Hovertip
 
@@ -18,11 +17,70 @@ def resource_path(relative_path):
 #enddef
 
 
+
 root = Tk()
 root.title("Dice Roller")
 root.geometry('775x550')
 root.configure(bg="#1b1f1a")
 root.resizable("false","false")
+
+class ScrollFrame(Frame):
+	def __init__(self, parent):
+		super().__init__(parent) # create a frame (self)
+
+		self.canvas = Canvas(self, borderwidth=0, background="#ffffff")	#place canvas on self
+		self.viewPort = Frame(self.canvas, background="#ffffff")			#place a frame on the canvas, this frame will hold the child widgets 
+		self.vsb = Scrollbar(self, orient="vertical", command=self.canvas.yview)	#place a scrollbar on self 
+		self.canvas.configure(yscrollcommand=self.vsb.set)					#attach scrollbar action to scroll of canvas
+
+		self.vsb.pack(side="right", fill="y")								#pack scrollbar to right of self
+		self.canvas.pack(side="left", fill="both", expand=True)				#pack canvas to left of self and expand to fil
+		self.canvas_window = self.canvas.create_window((4,4), window=self.viewPort, anchor="nw", tags="self.viewPort") #add view port frame to canvas
+
+		self.viewPort.bind("<Configure>", self.onFrameConfigure)			#bind an event whenever the size of the viewPort frame changes.
+		self.canvas.bind("<Configure>", self.onCanvasConfigure)				#bind an event whenever the size of the canvas frame changes.
+			
+		self.viewPort.bind('<Enter>', self.onEnter)							# bind wheel events when the cursor enters the control
+		self.viewPort.bind('<Leave>', self.onLeave)							# unbind wheel events when the cursorl leaves the control
+
+		self.onFrameConfigure(None)											#perform an initial stretch on render, otherwise the scroll region has a tiny border until the first resize
+
+	def onFrameConfigure(self, event):											  
+		'''Reset the scroll region to encompass the inner frame'''
+		self.canvas.configure(scrollregion=self.canvas.bbox("all"))			#whenever the size of the frame changes, alter the scroll region respectively.
+
+	def onCanvasConfigure(self, event):
+		'''Reset the canvas window to encompass inner frame when required'''
+		canvas_width = event.width
+		self.canvas.itemconfig(self.canvas_window, width = canvas_width)	#whenever the size of the canvas changes alter the window region respectively.
+
+	def onMouseWheel(self, event):											# cross platform scroll wheel event
+		if platform.system() == 'Windows':
+			self.canvas.yview_scroll(int(-1* (event.delta/120)), "units")
+		elif platform.system() == 'Darwin':
+			self.canvas.yview_scroll(int(-1 * event.delta), "units")
+		else:
+			if event.num == 4:
+				self.canvas.yview_scroll( -1, "units" )
+			elif event.num == 5:
+				self.canvas.yview_scroll( 1, "units" )
+	
+	def onEnter(self, event):												# bind wheel events when the cursor enters the control
+		if platform.system() == 'Linux':
+			self.canvas.bind_all("<Button-4>", self.onMouseWheel)
+			self.canvas.bind_all("<Button-5>", self.onMouseWheel)
+		else:
+			self.canvas.bind_all("<MouseWheel>", self.onMouseWheel)
+
+	def onLeave(self, event):												# unbind wheel events when the cursorl leaves the control
+		if platform.system() == 'Linux':
+			self.canvas.unbind_all("<Button-4>")
+			self.canvas.unbind_all("<Button-5>")
+		else:
+			self.canvas.unbind_all("<MouseWheel>")
+		#endif
+	#endDef
+#endclass
 
 def zeroDice():
 	for die in 4, 6, 8, 10, 12, 20, 100, 1:
@@ -121,10 +179,10 @@ def roll():
 #enddef
 
 def incMod(event, num): #increment/decrement modifier
-    curVal = int(m[num].cget("text")) #get current modifier value
-    newVal = curVal + 1 if event.num == 1 or event.delta > 0 else curVal - 1 #increment if left-clicked or scrolled up, otherwise decrement
-    m[num].config(text=(f"+" if newVal >= 0 else "") + str(newVal)) #prepend a "+" for a positive number, then cast it to a string and put it in the box
-    #endif
+	curVal = int(m[num].cget("text")) #get current modifier value
+	newVal = curVal + 1 if event.num == 1 or event.delta > 0 else curVal - 1 #increment if left-clicked or scrolled up, otherwise decrement
+	m[num].config(text=(f"+" if newVal >= 0 else "") + str(newVal)) #prepend a "+" for a positive number, then cast it to a string and put it in the box
+	#endif
 #enddef
 
 #frame to hold the die rollers
@@ -440,7 +498,16 @@ Click \"Roll!\" to roll the dice as you've defined them.\nClick \"Reset\" to set
 helpBtn = Button(root, text="Usage Help", command=showHelp)
 helpBtn.place(x=765, y=540, anchor=SE)
 
-def showMacWdw():
+def macWdwCloseHandler():
+	macWdw.update()
+	global macWdwX, macWdwY
+	macWdwX=macWdw.winfo_x()
+	macWdwY=macWdw.winfo_y()
+	macWdw.destroy()
+#endDef
+
+def showMacWdw(x, y):
+	print(f'x:{x}, y:{y}, macWdwX:{macWdwX}, macWdwY:{macWdwY}')
 	try:
 		global macWdw
 		if macWdw.winfo_exists():
@@ -451,12 +518,22 @@ def showMacWdw():
 		macWdw = Toplevel(root)
 	#endtry
 	macWdw.title("Dice Roller Macro Editor")
-	root.update()
-	rootX = root.winfo_x()
-	rootY = root.winfo_y()
-	macWdw.geometry("%dx%d+%d+%d" % (675, 400, rootX+50, rootY+250))
-	macWdw.configure(bg="#1b1f1a")
+	
+	if x==0 and y==0: #this means we haven't closed the macro window before.
+		root.update()
+		rootX = root.winfo_x()
+		rootY = root.winfo_y()
+		macWdw.geometry("%dx%d+%d+%d" % (675, 400, rootX+800, rootY+300))
+	else: #if we have, we'll put it back where it was.
+		macWdw.geometry("%dx%d+%d+%d" % (675, 400, x, y))
+	#endif
+	macWdw.configure(bg="#1b1f1a", borderwidth=1, relief=RIDGE)
 	macWdw.resizable("false","false")
+
+	macWdw.protocol("WM_DELETE_WINDOW", macWdwCloseHandler)
+
+	#macWdwCloseBtn = Button(macWdw, text="Close", command= lambda: macWdw.destroy())
+	#macWdwCloseBtn.place(x=625, y=5, anchor=NW)
 
 	macFile = open("macros.ini","r")
 	global macLoadImg, macRollImg, macDelImg #these have to be defined here or they'll be garbage collected from the showMac() function?
@@ -464,23 +541,13 @@ def showMacWdw():
 	macRollImg = PhotoImage(file="up-arrow.png")
 	macDelImg = PhotoImage(file="up-arrow.png")
 	i=0
-	scrollableFrame = Frame(macWdw, width=400, height=250, borderwidth=1, relief=RAISED, bg="#800050")
-	scrollableFrame.place(x=10, y=5)
-	scrollableCanvas = Canvas(scrollableFrame, bg="#00B000", width=500, height=350)
-	scrollableCanvas.place(x=0, y=0)
-	scrollableCanvas.create_text(10, 300, text="Dicks\n\n\nDicks\n\n\nDicks\n\n\nDicks\n\n\n")
-	'''
-	macFrame = Frame(scrollableCanvas, width=350, borderwidth=1, relief=RAISED, bg="#505050")
-	macFrame.pack(side=LEFT)
+	macFrame = ScrollFrame(macWdw)#, width=350, borderwidth=1, relief=RAISED, bg="#505050")
+	macFrame.place(x=5, y=5)
 	for curMacString in macFile:
 		curMacList = curMacString.split(',')
 		showMac(curMacList, i, macFrame, macLoadImg, macRollImg, macDelImg)
 		i+=2
 	#endfor
-	'''
-	scrollbar=Scrollbar(scrollableFrame, orient="vertical")
-	scrollbar.place(x=380, y=0)#, relheight=1.0)
-	#scrollbar.pack(side=RIGHT, fill="y")
 
 	line = ttk.Separator(macWdw, orient='horizontal').place(y=300, relwidth=1.0)
 	macHelp = Text(macWdw, height=4, width=70, bg="#1b1f1a", borderwidth=0, fg="white", font=("Arial Narrow", "12"))
@@ -489,11 +556,10 @@ def showMacWdw():
 -   Load: Load the saved dice values and roll name into the main window.\n\
 -   Roll: As above, but immediately perform a roll of the saved dice.\n\
 -   Delete: Orders you a fresh Cosmopolitan...")
-
 #endDef
 
-
-macroBtn = Button(root, text="Macros", command=showMacWdw)
+macWdwX=macWdwY=0
+macroBtn = Button(root, text="Macros", command= lambda: showMacWdw(macWdwX,macWdwY))
 macroBtn.place(x=10, y=540, anchor=SW)
 
 #define dictionary of Entry objects
@@ -548,15 +614,18 @@ def delMac(macName):
 		#endif
 	#endfor
 	macFile.close()
+	macWdw.update()
+	macWdwX=macWdw.winfo_x()
+	macWdwY=macWdw.winfo_y()
 	macWdw.destroy()
-	showMacWdw()
+	showMacWdw(macWdwX, macWdwY)
 
 #endDef
 
 def showMac(macro, row, frameRef, macLoadImg, macRollImg, macDelImg):
-	macName = Label(frameRef, text=f'{macro[0]}')
+	macName = Label(frameRef.viewPort, text=f'{macro[0]}')
 	macName.grid(row=row, column=0, sticky=EW, padx=10, pady=3)
-	macDice = Entry(frameRef, width=0)
+	macDice = Entry(frameRef.viewPort, width=0)
 	i = 0
 	realSize = 0
 	while i < (len(macro) - 1):
@@ -578,28 +647,31 @@ def showMac(macro, row, frameRef, macLoadImg, macRollImg, macDelImg):
 		#endif
 	#endwhile
 	macDice.grid(row=row, column=1, padx=5, sticky=EW)
-		
-	macLoadLbl = Label(frameRef, image=macLoadImg, bg="white")
+
+	macLoadLbl = Label(frameRef.viewPort, image=macLoadImg, bg="white")
 	macLoadLbl.grid(row=row, column=2, padx=2)
 	macLoadTip = Hovertip(macLoadLbl, "Load this macro into the main window", hover_delay=400)
 
 	macLoadLbl.bind("<Button-1>", lambda event: loadMac(macro))
 
-	macRollLbl = Label(frameRef, image=macRollImg, bg="white")
+	macRollLbl = Label(frameRef.viewPort, image=macRollImg, bg="white")
 	macRollLbl.grid(row=row, column=3, padx=2)
 	macRollTip = Hovertip(macRollLbl, "Load this macro into the main window, and roll it.", hover_delay=400)
 
-	macRollLbl.bind("<Button-1>", lambda event: loadMac(macro), roll())
+	macRollLbl.bind("<Button-1>", lambda event: loadMacAndRoll(macro))
 
-	macDelLbl = Label(frameRef, image=macDelImg, bg="white")
+	macDelLbl = Label(frameRef.viewPort, image=macDelImg, bg="white")
 	macDelLbl.grid(row=row, column=4, padx=2, pady=2)
 	macDelTip = Hovertip(macDelLbl, "Nobody knows what this button does.", hover_delay=400)
 
 	macDelLbl.bind("<Button-1>", lambda event: delMac(macName.cget("text")))
 
-	line = ttk.Separator(frameRef, orient='horizontal').grid(row=row+1, column=0, columnspan=5, sticky=EW)
+	line = ttk.Separator(frameRef.viewPort, orient='horizontal').grid(row=row+1, column=0, columnspan=5, sticky=EW)
+#endDef
 
-
+def loadMacAndRoll(macro):
+	loadMac(macro)
+	roll()
 #endDef
 
 def mod(op, num):
