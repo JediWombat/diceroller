@@ -126,16 +126,19 @@ def roll():
 	for die in 4, 6, 8, 10, 12, 20, 100, 1:
 		i=0
 		sub = 0
-		if d[die].get() != "":
-			if int(d[die].get()) <= 0:
+		numRolls = d[die].get()
+		modi = int(m[die].cget("text"))
+
+		if numRolls != "":
+			if int(numRolls) <= 0:
 				d[die].delete(0, END)
 				d[die].insert(0, "0")
 			#endif
-			if int(d[die].get()) > 20:
+			if int(numRolls) > 20:
 				d[die].delete(0, END)
 				d[die].insert(0, "20")
 			#endif
-			if d[die].get() != "0":
+			if numRolls != "0":
 				if die == 1:
 					if int(sizeX.get()) == 0:
 						output.insert(END, f'You asked to roll {numX.get()}d0. I can\'t roll a zero-sided die.')
@@ -156,24 +159,20 @@ def roll():
 				#endif
 				output.insert(END, f'{newRoll}')
 				sub += newRoll
-				modi = 0
-				if i == int(d[die].get()):
+
+				if i == int(numRolls): #we've finished rolling this die
 					output.insert(END, "\n")
-					#if die == 1:
-					#	output.insert(END, f'Sub-total for rolls d{int(sizeX.get())}: {sub}\n\n')
-					#else:
-					output.insert(END, f'Rolled total: {sub + modi}\n')
-					#endif
-					if m[die].cget("text") != "+0":
-						modi = int(m[die].cget("text"))
-						if modi > 99:
-							m[die].config(text="99")
-							modi = 99
-						elif modi < -99:
-							m[die].config(text="-99")
-							modi = -99
+					output.insert(END, f'Rolled total: {sub}\n')
+
+					if modi != 0:
+						if modi > 30:
+							m[die].config(text="+30")
+							modi = 30
+						elif modi < -30:
+							m[die].config(text="-30")
+							modi = -30
 						#endif
-						#mods = m[die].cget("text") #modifier sign
+
 						if modi < 0:
 							output.insert(END, f'With {modi} modifier: {sub + modi}\n\n')
 						else:
@@ -422,6 +421,10 @@ def saveMacro():
 		output.insert(END, "You must enter a name to save a macro.")
 		return
 	#endif
+	if len(name) > 15:
+		name=name[:15]
+	#endif
+	#this is also handled by the bindings on nameEntry, but if you're quick you can sneak another character in. This will ignore that extra character.
 
 	macFile = open("macros.ini", "r")
 	macContents = macFile.readlines()
@@ -454,6 +457,11 @@ def saveMacro():
 		#endif
 	#endFor
 	#print(f'Saving macro: {macString}')
+	if macString=="":
+		output.delete("1.0", END)
+		output.insert(END, "You must specify at least one die to save a macro.")
+		return
+	#endif
 	macString = macString[:-1]
 	macFile = open("macros.ini","a")
 	macFile.write(f'{macString}\n')
@@ -472,24 +480,36 @@ def refreshMacWdw():
 	#endif
 #endDef
 
+def truncName(event):
+	name=nameEntry.get() #get the current macro name
+	if len(name) > 15:
+		cleanedName=nameEntry.get()[:15] #truncate to 15 chars if currently over
+		nameEntry.delete(0, END)
+		nameEntry.insert(END, cleanedName)
+	#endif
+#endDef
+
+
 nameFrame = Frame(root, width=700, height=20, bg="#1b1f1a")
 nameFrame.place(x=0, y=210)
 nameLbl = Label(nameFrame, text="Roll Name:", bg="#3b3f3a", fg="white", borderwidth=2, relief=SUNKEN)
 nameLbl.grid(row=0, column=0, padx=10)
-nameEntry = Entry(nameFrame)
+nameEntry = Entry(nameFrame, bg=accentColour, fg="white")
+nameEntry.bind("<KeyRelease>", lambda event: truncName(event))
+#nameEntry.bind("<KeyRelease>", truncName())
 nameEntry.grid(row=0, column=1)
 saveMac = Button(nameFrame, text="Save macro", command=saveMacro)
 saveMac.grid(row=0, column=2, padx=20)
 
 outFrame = Frame(root, width=755, height=200)
 outFrame.place(x=10, y=245)
-output = Text(outFrame, height=1, width=1)
+output = Text(outFrame, height=1, width=1, bg=accentColour, fg="white")
 output.place(relwidth=1.0, relheight=1.0)
 output.insert(END, "Assign the number of dice to roll above, then click \"Roll\"!\n\nPlease click the  help button below for more usage information.")
 
 totFrame = Frame(root, width = 100, height = 20)
 totFrame.place(x=10, y=465)
-totText = Text(totFrame, height=1, width=1)
+totText = Text(totFrame, height=1, width=1, bg=accentColour, fg="white")
 totText.place(relwidth=1.0, relheight=1.0)
 
 def showHelp():
@@ -541,13 +561,13 @@ def showMacFrame():
 	macFile = open("macros.ini","r")
 	global macLoadImg, macRollImg, macDelImg #these have to be defined here or they'll be garbage collected from the showMac() function?
 	macLoadImg = PhotoImage(file="up-arrow.png")
-	macRollImg = PhotoImage(file="up-arrow.png")
-	macDelImg = PhotoImage(file="up-arrow.png")
+	macRollImg = PhotoImage(file="up-arrow-dice.png")
+	macDelImg = PhotoImage(file="delete-dice.png")
 	row=0
 	macDropDown = Frame(root, bg=mainColour, width=int(rootW)-10, height=295)
 	macDropDown.place(x=5, y=rootH)
 	line = ttk.Separator(macDropDown, orient='horizontal').place(y=0, relwidth=1.0)
-	macFrame = ScrollFrame(macDropDown, width=430, height=295)
+	macFrame = ScrollFrame(macDropDown, width=427, height=295)
 	macFrame.place(x=0, y=2)
 	for curMacString in macFile:
 		curMacList = curMacString.split(',')
@@ -626,8 +646,8 @@ def delMac(macName):
 
 def showMac(macro, row, frameRef, macLoadImg, macRollImg, macDelImg):
 	macName = Label(frameRef.viewPort, text=f'{macro[0]}')
-	macName.grid(row=row, column=0, sticky=EW, padx=10, pady=3)
-	macDice = Entry(frameRef.viewPort, width=28)
+	macName.grid(row=row, column=0, sticky=EW, padx=5, pady=3)
+	macDice = Entry(frameRef.viewPort, width=31)
 	i = 0
 	realSize = 0
 	while i < (len(macro) - 1):
