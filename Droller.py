@@ -5,15 +5,45 @@ import os, sys, platform, random
 from PIL import ImageTk, Image
 from idlelib.tooltip import Hovertip
 
+#I'm not really sure what some of this does. What is MEIPASS? It only works when running from an executable, otherwise it bombs, hence the try: block.
+def resource_path(relativePath):
+	if "png" in relativePath:
+		try:
+			base_path = sys._MEIPASS #return local path for *.png images, as they're baked into the executable.
+		except Exception:
+			if getattr(sys, 'frozen', False):
+				base_path = os.path.abspath(sys.executable) #return the local path of the .exe if we're running as an executable, to find other files, such as the macros.ini.
+			else:
+				base_path = os.path.abspath(".") #if we're running as a script, return the current path of the script itself.
+			#endif
+		#endtry
+	else:
+		base_path = os.path.abspath(".")
+	#endif
+	return os.path.join(base_path, relativePath)
+#enddef
+
+#create macro file if it does not exist
+try:
+	macFile = open(resource_path("macros.ini"), "r")
+except IOError:
+	macFile = open(resource_path("macros.ini"), "a")
+	macFile.close()
+#endTry
+
+'''
+#original resource_path
 def resource_path(relative_path):
 	try:
 		base_path = sys._MEIPASS
+		print("dicks")
 	except Exception:
 		base_path = os.path.abspath(".")
+		print("balls")
 	#endtry
 
 	return os.path.join(base_path, relative_path)
-#enddef
+#enddef'''
 
 global mainColour
 mainColour="#1b1f1a"
@@ -24,6 +54,9 @@ global rootW
 rootW=775
 global rootH
 rootH=550
+
+global rollLog
+rollLog=""
 
 root = Tk()
 root.title("Dice Roller")
@@ -325,7 +358,7 @@ def saveMacro():
 	#endif
 	#this is also handled by the bindings on nameEntry, but if you're quick you can sneak another character in. This will ignore that extra character.
 
-	macFile = open("macros.ini", "r")
+	macFile = open(resource_path("macros.ini"), "r")
 	macContents = macFile.readlines()
 	for macro in macContents:
 		macName = macro.split(',')[0]
@@ -334,6 +367,7 @@ def saveMacro():
 			return
 		#endif
 	#endfor
+	macFile.close()
 	for die in 4, 6, 8, 10, 12, 20, 100, 1:
 		size=0
 		num=d[die].get()
@@ -360,7 +394,7 @@ def saveMacro():
 		return
 	#endif
 	macString = macString[:-1]
-	macFile = open("macros.ini","a")
+	macFile = open(resource_path("macros.ini"),"a")
 	macFile.write(f'{macString}\n')
 	macFile.close()
 	overwrite(output, f'Macro \"{name}\" was saved successfully.')
@@ -403,9 +437,13 @@ output.place(relwidth=1.0, relheight=1.0)
 output.insert(END, "Assign the number of dice to roll above, then click \"Roll\"!\n\nPlease click the  help button below for more usage information.")
 
 totFrame = Frame(root, width = 100, height = 20)
-totFrame.place(x=10, y=465)
+totFrame.place(x=10, y=450, anchor=NW)
 totText = Text(totFrame, height=1, width=1, bg=accentColour, fg="white")
 totText.place(relwidth=1.0, relheight=1.0)
+
+logging = 0
+logChk = Checkbutton(root, text="Log rolls", variable=logging, bg=mainColour, fg="white", selectcolor=accentColour, activebackground=mainColour, activeforeground="white", borderwidth=1, relief=GROOVE, padx=5)
+logChk.place(x=679, y=450, anchor=NW)
 
 def showHelp():
 	try:
@@ -459,11 +497,11 @@ def showMacFrame():
 	newH=str(int(rootH) + 300)
 	root.geometry(f'{rootW}x{newH}')
 
-	macFile = open("macros.ini","r")
+	macFile = open(resource_path("macros.ini"),"r")
 	global macLoadImg, macRollImg, macDelImg #these have to be defined here or they'll be garbage collected from the showMac() function?
-	macLoadImg = PhotoImage(file="up-arrow.png")
-	macRollImg = PhotoImage(file="up-arrow-dice.png")
-	macDelImg = PhotoImage(file="delete-dice.png")
+	macLoadImg = PhotoImage(file=resource_path("up-arrow.png"))
+	macRollImg = PhotoImage(file=resource_path("up-arrow-dice.png"))
+	macDelImg = PhotoImage(file=resource_path("delete-dice.png"))
 	row=0
 	macDropDown = Frame(root, bg=mainColour, width=int(rootW)-10, height=295)
 	macDropDown.place(x=5, y=rootH)
@@ -475,7 +513,7 @@ def showMacFrame():
 		showMac(curMacList, row, macFrame, macLoadImg, macRollImg, macDelImg)
 		row+=2
 	#endfor
-
+	macFile.close()
 	line = ttk.Separator(macDropDown, orient='vertical').place(x=450, relheight=1.0)
 	
 	macHelp = Text(macDropDown, height=15, width=34, bg=mainColour, borderwidth=0, fg="white", font=("Arial Narrow", "12"), wrap=WORD)
@@ -527,11 +565,11 @@ def loadMac(macro):
 #endDef
 
 def delMac(macName):
-	macFile = open("macros.ini","r")
+	macFile = open(resource_path("macros.ini"),"r")
 	macContents = macFile.readlines()
 	macFile.close()
 
-	macFile = open("macros.ini", "w")
+	macFile = open(resource_path("macros.ini"), "w")
 	for macro in macContents:
 		targetMacName = macro.split(',')[0]
 		if targetMacName != macName:

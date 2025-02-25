@@ -23,6 +23,9 @@ Added macro functionality, and tidied up some colours.
 ### v0.4.1
 Macro bugfix, general code cleanup.
 
+### v0.4.2
+Major bugfix in compiled .exe regarding macro file handling.
+
 ## Completed features:
 
  - ~~Add a dX roller, where the user can specify the size of the die to roll (i.e. some games use a d30).~~
