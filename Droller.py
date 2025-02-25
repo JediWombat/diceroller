@@ -31,20 +31,6 @@ except IOError:
 	macFile.close()
 #endTry
 
-'''
-#original resource_path
-def resource_path(relative_path):
-	try:
-		base_path = sys._MEIPASS
-		print("dicks")
-	except Exception:
-		base_path = os.path.abspath(".")
-		print("balls")
-	#endtry
-
-	return os.path.join(base_path, relative_path)
-#enddef'''
-
 global mainColour
 mainColour="#1b1f1a"
 global accentColour
@@ -578,15 +564,30 @@ def delMac(macName):
 	#endfor
 	macFile.close()
 	refreshMacWdw()
+#endDef
 
+#replaceN from https://stackoverflow.com/a/46705963/1933916
+def replaceN(s, sub, repl, nth):
+    find = s.find(sub)
+    i = 1
+    while find != -1:
+        if i == nth:
+            s = s[:find]+repl+s[find + len(sub):]
+            i = 0
+		#endif
+        find = s.find(sub, find + len(sub) + 1)
+        i += 1
+	#endwhile
+    return s
 #endDef
 
 def showMac(macro, row, frameRef, macLoadImg, macRollImg, macDelImg):
 	macName = Label(frameRef.viewPort, text=f'{macro[0]}')
 	macName.grid(row=row, column=0, sticky=EW, padx=5, pady=3)
-	macDice = Entry(frameRef.viewPort, width=31)
+	macDice = Label(frameRef.viewPort, width=34, fg="white", bg=accentColour, wraplength=300)
 	i = 0
 	realSize = 0
+	macDiceStr = ""
 	while i < (len(macro) - 1):
 		num=i+1
 		size=i+2
@@ -594,18 +595,23 @@ def showMac(macro, row, frameRef, macLoadImg, macRollImg, macDelImg):
 			realSizeIndex=i+3
 			realSize=macro[realSizeIndex]
 			mod=i+4
-			macDice.insert(END, f'{macro[num]}d{realSize} {macro[mod]}')
+			#macDice.insert(END, f'{macro[num]}d{realSize} {macro[mod]}')
+			macDiceStr+=f'{macro[num]}d{realSize} {macro[mod]}'
 			i+=4
 		else:
 			mod=i+3
-			macDice.insert(END, f'{macro[num]}d{macro[size]} {macro[mod]}')
+			#macDice.insert(END, f'{macro[num]}d{macro[size]} {macro[mod]}')
+			macDiceStr+=f'{macro[num]}d{macro[size]} {macro[mod]}'
 			i+=3
 		#endif
 		if i < (len(macro) -1):
-			macDice.insert(END, f', ')
+			#macDice.insert(END, f', ')
+			macDiceStr+=f', '
 		#endif
 	#endwhile
-	macDice.configure(state="disabled")
+	
+	macDiceStr=replaceN(macDiceStr, ",", "\n", 3)
+	overwrite(macDice, macDiceStr)
 	macDice.grid(row=row, column=1, padx=5, sticky=EW)
 
 	macLoadLbl = Label(frameRef.viewPort, image=macLoadImg, bg="white")

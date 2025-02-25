@@ -26,6 +26,10 @@ Macro bugfix, general code cleanup.
 ### v0.4.2
 Major bugfix in compiled .exe regarding macro file handling.
 
+### v0.4.2.1
+Minor UI update to macro display. Got rid of the entry widget in favour of a label, and allowed the macros to line-wrap. Longer macros are perfectly readable now. Work has begun on the log functionality, but that checkbox doesn't do anything yet.
+
+
 ## Completed features:
 
  - ~~Add a dX roller, where the user can specify the size of the die to roll (i.e. some games use a d30).~~
