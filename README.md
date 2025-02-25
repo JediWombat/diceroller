@@ -20,6 +20,9 @@ Added field to name rolls, help button with better usage information, and cleane
 ### v0.4
 Added macro functionality, and tidied up some colours.
 
+### v0.4.1
+Macro bugfix, general code cleanup.
+
 ## Completed features:
 
  - ~~Add a dX roller, where the user can specify the size of the die to roll (i.e. some games use a d30).~~
