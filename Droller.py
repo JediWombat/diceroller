@@ -1,9 +1,24 @@
 from tkinter import *
 from tkinter import ttk
 import gc as gc
+import datetime as dt
+import time
 import os, sys, platform, random
 from PIL import ImageTk, Image
 from idlelib.tooltip import Hovertip
+
+global mainColour
+mainColour="#1b1f1a"
+global accentColour
+accentColour="#3b3f3a"
+
+global rootW
+rootW=775
+global rootH
+rootH=550
+
+global rollLog
+rollLog=""
 
 #I'm not really sure what some of this does. What is MEIPASS? It only works when running from an executable, otherwise it bombs, hence the try: block.
 def resource_path(relativePath):
@@ -31,18 +46,22 @@ except IOError:
 	macFile.close()
 #endTry
 
-global mainColour
-mainColour="#1b1f1a"
-global accentColour
-accentColour="#3b3f3a"
+#replaceN from https://stackoverflow.com/a/46705963/1933916
+def replaceN(s, sub, repl, nth):
+    find = s.find(sub)
+    i = 1
+    while find != -1:
+        if i == nth:
+            s = s[:find]+repl+s[find + len(sub):]
+            i = 0
+		#endif
+        find = s.find(sub, find + len(sub) + 1)
+        i += 1
+	#endwhile
+    return s
+#endDef
 
-global rootW
-rootW=775
-global rootH
-rootH=550
 
-global rollLog
-rollLog=""
 
 root = Tk()
 root.title("Dice Roller")
@@ -213,7 +232,13 @@ def roll():
 	#endfor
 	if output.get("1.0", END).strip("\n") == "":
 		overwrite(output, "No dice were selected to roll.")
-	#endif
+	elif logging.get()==1:
+		timestamp=time.strftime("%H:%M:%S", time.localtime(time.time()))
+		global rollLog
+		numLines=int(output.index(END).split('.')[0])
+		lastRoll=output.get("1.0", f'{numLines - 2}.0')
+		rollLog+=f'{timestamp}, {lastRoll}================\n'
+		#rollLog+="\n\n================\n"
 #enddef
 
 def incMod(event, num): #increment/decrement modifier
@@ -277,6 +302,8 @@ def setupDie(dieSize, columnIndex):
 	m[dieSize].grid(row=2, column=columnIndex, columnspan=2)
 #endDef
 
+###Start actually creating things on root() now.
+
 #frame to hold the die rollers
 dFrame = Frame(root, bg=mainColour)
 dFrame.place(anchor=NW, x=10, y=10)
@@ -288,8 +315,7 @@ for die in 4, 6, 8, 10, 12, 20, 100:
 	columnIndex+=3
 #endfor
 
-line = ttk.Separator(dFrame, orient='vertical').grid(row = 0, column=20, rowspan=20, sticky="ns", padx=10)
-
+#XdY has to be configured manually because it's different to the other dice
 imgX = ImageTk.PhotoImage(Image.open(resource_path("dx.png")).resize((75,75)))
 
 canX = Canvas(dFrame, width=75, height=75, bg=accentColour, bd=0, highlightthickness=0)
@@ -404,7 +430,6 @@ def truncName(event):
 	#endif
 #endDef
 
-
 nameFrame = Frame(root, width=700, height=20, bg=mainColour)
 nameFrame.place(x=0, y=210)
 nameLbl = Label(nameFrame, text="Roll Name:", bg=accentColour, fg="white", borderwidth=2, relief=SUNKEN)
@@ -427,9 +452,50 @@ totFrame.place(x=10, y=450, anchor=NW)
 totText = Text(totFrame, height=1, width=1, bg=accentColour, fg="white")
 totText.place(relwidth=1.0, relheight=1.0)
 
-logging = 0
-logChk = Checkbutton(root, text="Log rolls", variable=logging, bg=mainColour, fg="white", selectcolor=accentColour, activebackground=mainColour, activeforeground="white", borderwidth=1, relief=GROOVE, padx=5)
-logChk.place(x=679, y=450, anchor=NW)
+logging = IntVar()
+logChk = Checkbutton(root, text="Log rolls", variable=logging, bg=mainColour, onvalue=1, offvalue=0, fg="white", selectcolor=accentColour, activebackground=mainColour, activeforeground="white", borderwidth=1, relief=GROOVE, padx=5)
+logChk.place(x=600, y=450, anchor=NW)
+
+#def showLogWdw():
+#	global rollLog
+#	overwrite(output, rollLog)
+#endDef
+
+def showLogWdw():
+	global rollLog
+	try:
+		global logWdw
+		if logWdw.winfo_exists():
+			pass
+		else:
+			logWdw = Toplevel(root)
+	except NameError:
+		logWdw = Toplevel(root)
+	#endtry
+	logWdw.title("Log of Completed Rolls")
+	root.update()
+	rootX = root.winfo_x()
+	rootY = root.winfo_y()
+	rootH = root.winfo_height()
+	rootW = root.winfo_width()
+
+	logWdw.geometry("%dx%d+%d+%d" % (800, 400, (rootX+(rootW/2)-400), rootY+(rootH/2)-200))
+	logWdw.configure(bg=mainColour)
+	logWdw.resizable("false","true")
+	logWdw.update()
+	logFrame = Frame(logWdw, bg=mainColour, width=int(logWdw.winfo_width())-10, height=int(logWdw.winfo_height())-10)
+	logFrame.place(x=5, y=5, anchor=NW)
+	logFrame.update()
+	logScrollFrame = ScrollFrame(logFrame, width=logFrame.winfo_width(), height=logFrame.winfo_height())
+	logScrollFrame.place(x=0, y=0)
+
+	logText = Text(logScrollFrame.viewPort, bg=accentColour, fg="white", width=90)
+	logText.grid(row=0, column=0)
+	logText.insert("1.0", rollLog)
+#endDef
+
+showLogBtn = Button(root, text="Show Log", command=showLogWdw)
+showLogBtn.place(x=697, y=450, anchor=NW)
 
 def showHelp():
 	try:
@@ -500,7 +566,7 @@ def showMacFrame():
 		row+=2
 	#endfor
 	macFile.close()
-	line = ttk.Separator(macDropDown, orient='vertical').place(x=450, relheight=1.0)
+	#line = ttk.Separator(macDropDown, orient='vertical').place(x=450, relheight=1.0)
 	
 	macHelp = Text(macDropDown, height=15, width=34, bg=mainColour, borderwidth=0, fg="white", font=("Arial Narrow", "12"), wrap=WORD)
 	macHelp.place(y=2, x=455)
@@ -566,20 +632,7 @@ def delMac(macName):
 	refreshMacWdw()
 #endDef
 
-#replaceN from https://stackoverflow.com/a/46705963/1933916
-def replaceN(s, sub, repl, nth):
-    find = s.find(sub)
-    i = 1
-    while find != -1:
-        if i == nth:
-            s = s[:find]+repl+s[find + len(sub):]
-            i = 0
-		#endif
-        find = s.find(sub, find + len(sub) + 1)
-        i += 1
-	#endwhile
-    return s
-#endDef
+
 
 def showMac(macro, row, frameRef, macLoadImg, macRollImg, macDelImg):
 	macName = Label(frameRef.viewPort, text=f'{macro[0]}')

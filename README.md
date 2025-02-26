@@ -29,6 +29,8 @@ Major bugfix in compiled .exe regarding macro file handling.
 ### v0.4.2.1
 Minor UI update to macro display. Got rid of the entry widget in favour of a label, and allowed the macros to line-wrap. Longer macros are perfectly readable now. Work has begun on the log functionality, but that checkbox doesn't do anything yet.
 
+###v0.5-beta
+Roll logging option is now available and working. Needs some text wrangling and tidy up, but it's working.
 
 ## Completed features:
 
@@ -40,7 +42,8 @@ Minor UI update to macro display. Got rid of the entry widget in favour of a lab
 	- Added in v0.3.2
  - ~~Allow user-created combinations of dice (macros) to be pre-saved. So you can combine a d20 and 2d6 +4, and roll for attack and damage on a single click. These should also be nameable, as above.~~
 	- Added in v0.4
+ - ~~Allow saving of rolls into a log, and create a clean way for the user to view that log.~~
+	- Added in v0.5
 
 ## To-do:
- - Allow saving of rolls into a log, and create a clean way for the user to view that log.
  - Allow colorizing of dice icons (currently no idea if this is even possible).
