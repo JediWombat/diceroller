@@ -155,7 +155,10 @@ def roll():
 		else:
 			output.insert(END, f'==You made a {nameEntry.get()} roll==\n\n')
 		#endif
+	else:
+		output.insert(END, f'==You made an unnamed roll==\n\n')
 	#endif
+	diceRolled=0
 	for die in 4, 6, 8, 10, 12, 20, 100, 1:
 		i=0
 		sub = 0
@@ -189,6 +192,7 @@ def roll():
 				#endif
 			#endif
 			while i < int(numRolls):
+				diceRolled+=1
 				i += 1
 				if die == 1:
 					newRoll = random.randint(1,int(sizeX.get()))
@@ -230,14 +234,14 @@ def roll():
 		#endif
 	overwrite(totText, f'Total: {rollTotal}')
 	#endfor
-	if output.get("1.0", END).strip("\n") == "":
+	if diceRolled==0:
 		overwrite(output, "No dice were selected to roll.")
 	elif logging.get()==1:
 		timestamp=time.strftime("%H:%M:%S", time.localtime(time.time()))
 		global rollLog
 		numLines=int(output.index(END).split('.')[0])
-		lastRoll=output.get("1.0", f'{numLines - 2}.0')
-		rollLog+=f'{timestamp}, {lastRoll}================\n'
+		lastRoll=output.get("1.0", f'{numLines - 2}.0').strip('=')
+		rollLog+=f'=={timestamp}, {lastRoll}\n================\n\n'
 		#rollLog+="\n\n================\n"
 #enddef
 
